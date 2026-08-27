@@ -1,2 +1,1 @@
-# TEST001Stockfish
-A html test to see does stockfish work on github or not
+#DO NOT USE THIS REPO, USE Test001Stockfish REPO TO MAKE IT WORK, SEARCH IT AND YOU WILL SEE IT
