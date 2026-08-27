@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Stockfish Chess</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      text-align: center;
+    }
+
+    #board {
+      width: 480px;
+      height: 480px;
+      margin: 30px auto;
+      display: grid;
+      grid-template-columns: repeat(8, 60px);
+      grid-template-rows: repeat(8, 60px);
+      border: 4px solid #333;
+    }
+
+    .square {
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 42px;
+      cursor: pointer;
+    }
+
+    .light {
+      background: #f0d9b5;
+    }
+
+    .dark {
+      background: #b58863;
+    }
+
+    .selected {
+      outline: 4px solid yellow;
+      outline-offset: -4px;
+    }
+
+    #status {
+      font-weight: bold;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>Stockfish Chess</h1>
+
+<div id="board"></div>
+
+<div id="status">White to move</div>
+
+<script>
+const pieces = {
+  "wK": "♔",
+  "wQ": "♕",
+  "wR": "♖",
+  "wB": "♗",
+  "wN": "♘",
+  "wP": "♙",
+
+  "bK": "♚",
+  "bQ": "♛",
+  "bR": "♜",
+  "bB": "♝",
+  "bN": "♞",
+  "bP": "♟"
+};
+
+let board = [
+  ["bR","bN","bB","bQ","bK","bB","bN","bR"],
+  ["bP","bP","bP","bP","bP","bP","bP","bP"],
+  [null,null,null,null,null,null,null,null],
+  [null,null,null,null,null,null,null,null],
+  [null,null,null,null,null,null,null,null],
+  [null,null,null,null,null,null,null,null],
+  ["wP","wP","wP","wP","wP","wP","wP","wP"],
+  ["wR","wN","wB","wQ","wK","wB","wN","wR"]
+];
+
+let selected = null;
+
+function drawBoard() {
+  const boardElement = document.getElementById("board");
+
+  boardElement.innerHTML = "";
+
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+
+      const square = document.createElement("div");
+
+      square.className =
+        "square " +
+        ((row + col) % 2 === 0 ? "light" : "dark");
+
+      if (
+        selected &&
+        selected.row === row &&
+        selected.col === col
+      ) {
+        square.classList.add("selected");
+      }
+
+      const piece = board[row][col];
+
+      if (piece) {
+        square.textContent = pieces[piece];
+      }
+
+      square.addEventListener("click", function() {
+        squareClicked(row, col);
+      });
+
+      boardElement.appendChild(square);
+    }
+  }
+}
+
+function squareClicked(row, col) {
+
+  if (!selected) {
+
+    if (board[row][col]) {
+      selected = {
+        row: row,
+        col: col
+      };
+    }
+
+  } else {
+
+    board[row][col] =
+      board[selected.row][selected.col];
+
+    board[selected.row][selected.col] = null;
+
+    selected = null;
+  }
+
+  drawBoard();
+}
+
+drawBoard();
+</script>
+
+</body>
+</html>
