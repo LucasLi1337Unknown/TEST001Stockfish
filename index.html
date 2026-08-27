@@ -2,78 +2,210 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Stockfish Chess</title>
 
 <style>
-body {
-    font-family: Arial, sans-serif;
-    background: #f4f4f4;
-    text-align: center;
-}
+    * {
+        box-sizing: border-box;
+    }
 
-h1 {
-    margin-bottom: 5px;
-}
+    body {
+        margin: 0;
+        min-height: 100vh;
 
-#board {
-    width: 480px;
-    height: 480px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
 
-    margin: 20px auto;
+        background: #f4f4f4;
 
-    display: grid;
+        font-family:
+            Arial,
+            Helvetica,
+            sans-serif;
 
-    grid-template-columns: repeat(8, 60px);
-    grid-template-rows: repeat(8, 60px);
+        padding: 25px;
+    }
 
-    border: 4px solid #333;
-}
+    h1 {
+        margin-bottom: 5px;
+    }
 
-.square {
-    width: 60px;
-    height: 60px;
+    #status {
+        margin-top: 5px;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+        font-weight: bold;
+        font-size: 18px;
+    }
 
-    font-size: 42px;
+    #engineStatus {
+        margin-top: 6px;
 
-    cursor: pointer;
-}
+        color: #666;
+        font-size: 14px;
+    }
 
-.light {
-    background: #f0d9b5;
-}
+    #board {
+        width: 480px;
+        height: 480px;
 
-.dark {
-    background: #b58863;
-}
+        margin-top: 20px;
 
-.selected {
-    outline: 4px solid yellow;
-    outline-offset: -4px;
-}
+        display: grid;
 
-.possible {
-    box-shadow: inset 0 0 0 5px rgba(0, 255, 0, 0.45);
-}
+        grid-template-columns:
+            repeat(8, 60px);
 
-#status {
-    font-weight: bold;
-    margin-top: 10px;
-}
+        grid-template-rows:
+            repeat(8, 60px);
 
-#engineStatus {
-    color: #666;
-    margin-top: 8px;
-}
+        border: 4px solid #333;
+    }
 
-button {
-    padding: 10px 20px;
-    margin: 10px;
-    font-size: 16px;
-}
+    .square {
+        width: 60px;
+        height: 60px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        position: relative;
+
+        font-size: 43px;
+
+        cursor: pointer;
+
+        user-select: none;
+    }
+
+    .light {
+        background: #f0d9b5;
+    }
+
+    .dark {
+        background: #b58863;
+    }
+
+    .selected {
+        outline: 4px solid #ffd500;
+        outline-offset: -4px;
+    }
+
+    .legal::after {
+        content: "";
+
+        position: absolute;
+
+        width: 16px;
+        height: 16px;
+
+        border-radius: 50%;
+
+        background:
+            rgba(
+                50,
+                200,
+                80,
+                0.75
+            );
+    }
+
+    .capture::after {
+        content: "";
+
+        position: absolute;
+
+        inset: 6px;
+
+        border-radius: 50%;
+
+        border:
+            5px solid
+            rgba(
+                50,
+                200,
+                80,
+                0.75
+            );
+    }
+
+    .check {
+        box-shadow:
+            inset
+            0
+            0
+            0
+            6px
+            red;
+    }
+
+    #controls {
+        margin-top: 15px;
+    }
+
+    button {
+        padding:
+            10px
+            20px;
+
+        font-size: 16px;
+
+        border: none;
+
+        border-radius: 8px;
+
+        background: #4c6fff;
+
+        color: white;
+
+        font-weight: bold;
+
+        cursor: pointer;
+    }
+
+    button:hover {
+        filter: brightness(1.08);
+    }
+
+    #thinking {
+        margin-top: 10px;
+
+        color: #777;
+
+        min-height: 20px;
+    }
+
+    @media (
+        max-width: 600px
+    ) {
+
+        #board {
+            width: 92vw;
+            height: 92vw;
+
+            grid-template-columns:
+                repeat(
+                    8,
+                    11.5vw
+                );
+
+            grid-template-rows:
+                repeat(
+                    8,
+                    11.5vw
+                );
+        }
+
+        .square {
+            width: 11.5vw;
+            height: 11.5vw;
+
+            font-size: 8vw;
+        }
+    }
 </style>
 </head>
 
@@ -82,238 +214,251 @@ button {
 <h1>Stockfish Chess</h1>
 
 <div id="status">
-White to move
+    White to move
 </div>
 
 <div id="engineStatus">
-Loading Stockfish...
+    Loading Stockfish...
 </div>
+
+<div id="thinking"></div>
 
 <div id="board"></div>
 
-<button onclick="newGame()">
-New Game
-</button>
+<div id="controls">
+
+    <button id="newGameButton">
+        New Game
+    </button>
+
+</div>
+
+
+<!--
+IMPORTANT:
+
+chess.js must load BEFORE
+our main program.
+-->
+
 <script src="chess.js"></script>
+
+
 <script>
 
-const symbols = {
+/*
+=================================
+CHESS PIECE SYMBOLS
+=================================
+*/
 
-    wK: "♔",
-    wQ: "♕",
-    wR: "♖",
-    wB: "♗",
-    wN: "♘",
-    wP: "♙",
+const pieceSymbols = {
 
-    bK: "♚",
-    bQ: "♛",
-    bR: "♜",
-    bB: "♝",
-    bN: "♞",
-    bP: "♟"
+    wp: "♙",
+    wn: "♘",
+    wb: "♗",
+    wr: "♖",
+    wq: "♕",
+    wk: "♔",
+
+    bp: "♟",
+    bn: "♞",
+    bb: "♝",
+    br: "♜",
+    bq: "♛",
+    bk: "♚"
 
 };
 
 
-/* =========================
-   CHESS POSITION
-========================= */
+/*
+=================================
+CREATE CHESS GAME
+=================================
+*/
 
-let board;
-
-let selected = null;
-
-let turn = "w";
-
-let gameOver = false;
-
-
-/* =========================
-   STOCKFISH
-========================= */
-
-let engine;
-
-let engineReady = false;
+let game =
+    new Chess();
 
 
 /*
-Start Stockfish in a Web Worker.
+=================================
+BOARD SELECTION
+=================================
+*/
+
+let selectedSquare =
+    null;
+
+let selectedMoves =
+    [];
+
+
+/*
+=================================
+STOCKFISH
+=================================
+*/
+
+let stockfish =
+    null;
+
+let stockfishReady =
+    false;
+
+let stockfishThinking =
+    false;
+
+
+/*
+=================================
+START STOCKFISH
+=================================
 */
 
 function startStockfish() {
 
-    engine = new Worker(
-        "stockfish-18-lite-single.js"
-    );
+    stockfish =
+        new Worker(
+            "stockfish-18-lite-single.js"
+        );
 
 
-    engine.onmessage = function(event) {
+    stockfish.onmessage =
+        function(event) {
 
-        const line = event.data;
-
-        console.log("Stockfish:", line);
-
-
-        /*
-        Stockfish is ready.
-        */
-
-        if (
-            typeof line === "string" &&
-            line.includes("uciok")
-        ) {
-
-            engineReady = true;
-
-            document.getElementById(
-                "engineStatus"
-            ).textContent =
-                "Stockfish ready";
-
-        }
+            const message =
+                String(
+                    event.data
+                );
 
 
-        /*
-        Stockfish found a move.
-        */
+            console.log(
+                "Stockfish:",
+                message
+            );
 
-        if (
-            typeof line === "string" &&
-            line.startsWith("bestmove")
-        ) {
 
-            const parts =
-                line.split(" ");
-
-            const move =
-                parts[1];
-
+            /*
+            UCI initialized.
+            */
 
             if (
-                move &&
-                move !== "(none)"
+                message ===
+                "uciok"
             ) {
 
-                stockfishMove(move);
+                stockfish.postMessage(
+                    "isready"
+                );
 
             }
 
-        }
 
-    };
+            /*
+            Engine ready.
+            */
+
+            if (
+                message ===
+                "readyok"
+            ) {
+
+                stockfishReady =
+                    true;
+
+                document
+                    .getElementById(
+                        "engineStatus"
+                    )
+                    .textContent =
+                    "Stockfish ready";
+
+            }
 
 
-    engine.postMessage("uci");
+            /*
+            Engine returned move.
+            */
 
-}
+            if (
+                message.startsWith(
+                    "bestmove"
+                )
+            ) {
+
+                const parts =
+                    message.split(
+                        " "
+                    );
 
 
-/* =========================
-   START POSITION
-========================= */
+                const move =
+                    parts[1];
 
-function resetBoard() {
 
-    board = [
+                stockfishThinking =
+                    false;
 
-        [
-            "bR",
-            "bN",
-            "bB",
-            "bQ",
-            "bK",
-            "bB",
-            "bN",
-            "bR"
-        ],
 
-        [
-            "bP",
-            "bP",
-            "bP",
-            "bP",
-            "bP",
-            "bP",
-            "bP",
-            "bP"
-        ],
+                document
+                    .getElementById(
+                        "thinking"
+                    )
+                    .textContent =
+                    "";
 
-        [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-        ],
 
-        [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-        ],
+                if (
+                    !move ||
+                    move === "(none)"
+                ) {
 
-        [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-        ],
+                    updateStatus();
 
-        [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-        ],
+                    return;
+                }
 
-        [
-            "wP",
-            "wP",
-            "wP",
-            "wP",
-            "wP",
-            "wP",
-            "wP",
-            "wP"
-        ],
 
-        [
-            "wR",
-            "wN",
-            "wB",
-            "wQ",
-            "wK",
-            "wB",
-            "wN",
-            "wR"
-        ]
+                makeStockfishMove(
+                    move
+                );
 
-    ];
+            }
+
+        };
+
+
+    stockfish.onerror =
+        function(error) {
+
+            console.error(
+                error
+            );
+
+
+            document
+                .getElementById(
+                    "engineStatus"
+                )
+                .textContent =
+                "Stockfish failed to load";
+
+        };
+
+
+    stockfish.postMessage(
+        "uci"
+    );
 
 }
 
 
-/* =========================
-   DRAW BOARD
-========================= */
+/*
+=================================
+DRAW BOARD
+=================================
+*/
 
 function drawBoard() {
 
@@ -322,7 +467,9 @@ function drawBoard() {
             "board"
         );
 
-    boardElement.innerHTML = "";
+
+    boardElement.innerHTML =
+        "";
 
 
     for (
@@ -346,33 +493,125 @@ function drawBoard() {
             square.className =
                 "square " +
                 (
-                    (row + col) % 2 === 0
+                    (
+                        row +
+                        col
+                    ) %
+                    2 ===
+                    0
                         ? "light"
                         : "dark"
                 );
 
 
+            const squareName =
+                coordinatesToSquare(
+                    row,
+                    col
+                );
+
+
+            /*
+            Highlight selected square.
+            */
+
             if (
-                selected &&
-                selected.row === row &&
-                selected.col === col
+                selectedSquare ===
+                squareName
             ) {
 
-                square.classList.add(
-                    "selected"
-                );
+                square
+                    .classList
+                    .add(
+                        "selected"
+                    );
 
             }
 
 
+            /*
+            Highlight legal move.
+            */
+
+            const legalMove =
+                selectedMoves.find(
+                    move =>
+                        move.to ===
+                        squareName
+                );
+
+
+            if (legalMove) {
+
+                const targetPiece =
+                    game.get(
+                        squareName
+                    );
+
+
+                if (targetPiece) {
+
+                    square
+                        .classList
+                        .add(
+                            "capture"
+                        );
+
+                } else {
+
+                    square
+                        .classList
+                        .add(
+                            "legal"
+                        );
+
+                }
+
+            }
+
+
+            /*
+            Show pieces.
+            */
+
             const piece =
-                board[row][col];
+                game.get(
+                    squareName
+                );
 
 
             if (piece) {
 
+                const pieceKey =
+                    piece.color +
+                    piece.type;
+
+
                 square.textContent =
-                    symbols[piece];
+                    pieceSymbols[
+                        pieceKey
+                    ];
+
+            }
+
+
+            /*
+            Check highlight.
+            */
+
+            if (
+                piece &&
+                piece.type === "k" &&
+                piece.color ===
+                    game.turn() &&
+                game.isCheck()
+            ) {
+
+                square
+                    .classList
+                    .add(
+                        "check"
+                    );
 
             }
 
@@ -382,17 +621,17 @@ function drawBoard() {
                 function() {
 
                     squareClicked(
-                        row,
-                        col
+                        squareName
                     );
 
                 }
             );
 
 
-            boardElement.appendChild(
-                square
-            );
+            boardElement
+                .appendChild(
+                    square
+                );
 
         }
 
@@ -401,93 +640,198 @@ function drawBoard() {
 }
 
 
-/* =========================
-   PLAYER MOVE
-========================= */
+/*
+=================================
+CONVERT BOARD COORDINATES
+=================================
+*/
 
-function squareClicked(row, col) {
+function coordinatesToSquare(
+    row,
+    col
+) {
 
-    if (gameOver) {
+    const file =
+        String.fromCharCode(
+            97 + col
+        );
+
+
+    const rank =
+        8 - row;
+
+
+    return (
+        file +
+        rank
+    );
+
+}
+
+
+/*
+=================================
+PLAYER CLICK
+=================================
+*/
+
+function squareClicked(
+    square
+) {
+
+    /*
+    Don't let player move
+    while Stockfish is thinking.
+    */
+
+    if (
+        stockfishThinking
+    ) {
+
         return;
+
     }
 
 
     /*
-    Only allow player to move
-    while it is White's turn.
+    Player controls White.
     */
 
-    if (turn !== "w") {
+    if (
+        game.turn() !== "w"
+    ) {
+
         return;
+
     }
 
 
-    if (!selected) {
+    /*
+    Game already finished.
+    */
 
-        const piece =
-            board[row][col];
+    if (
+        game.isGameOver()
+    ) {
+
+        return;
+
+    }
 
 
-        /*
-        Player may only select
-        white pieces.
-        */
+    /*
+    We already selected
+    a piece.
+    */
 
-        if (
-            piece &&
-            piece.startsWith("w")
-        ) {
+    if (
+        selectedSquare
+    ) {
 
-            selected = {
-                row: row,
-                col: col
-            };
+        const legalMove =
+            selectedMoves.find(
+                move =>
+                    move.to ===
+                    square
+            );
+
+
+        if (legalMove) {
+
+            /*
+            Promotion defaults
+            to queen.
+            */
+
+            const result =
+                game.move({
+
+                    from:
+                        selectedSquare,
+
+                    to:
+                        square,
+
+                    promotion:
+                        "q"
+
+                });
+
+
+            selectedSquare =
+                null;
+
+            selectedMoves =
+                [];
+
+
+            if (result) {
+
+                drawBoard();
+
+                updateStatus();
+
+
+                if (
+                    !game
+                        .isGameOver()
+                ) {
+
+                    setTimeout(
+                        askStockfish,
+                        100
+                    );
+
+                }
+
+            }
+
+
+            return;
 
         }
+
+    }
+
+
+    /*
+    Select white piece.
+    */
+
+    const piece =
+        game.get(
+            square
+        );
+
+
+    if (
+        piece &&
+        piece.color === "w"
+    ) {
+
+        selectedSquare =
+            square;
+
+
+        selectedMoves =
+            game.moves({
+
+                square:
+                    square,
+
+                verbose:
+                    true
+
+            });
 
 
     } else {
 
-        const fromRow =
-            selected.row;
-
-        const fromCol =
-            selected.col;
-
-
-        /*
-        Move piece.
-        */
-
-        board[row][col] =
-            board[fromRow][fromCol];
-
-        board[fromRow][fromCol] =
+        selectedSquare =
             null;
 
-
-        selected = null;
-
-
-        turn = "b";
-
-
-        drawBoard();
-
-
-        document.getElementById(
-            "status"
-        ).textContent =
-            "Stockfish thinking...";
-
-
-        /*
-        Ask Stockfish for move.
-        */
-
-        askStockfish();
-
-        return;
+        selectedMoves =
+            [];
 
     }
 
@@ -497,294 +841,336 @@ function squareClicked(row, col) {
 }
 
 
-/* =========================
-   BOARD -> FEN
-========================= */
-
-function boardToFEN() {
-
-    let fen = "";
-
-
-    for (
-        let row = 0;
-        row < 8;
-        row++
-    ) {
-
-        let empty = 0;
-
-
-        for (
-            let col = 0;
-            col < 8;
-            col++
-        ) {
-
-            const piece =
-                board[row][col];
-
-
-            if (!piece) {
-
-                empty++;
-
-                continue;
-
-            }
-
-
-            if (empty > 0) {
-
-                fen += empty;
-
-                empty = 0;
-
-            }
-
-
-            const type =
-                piece[1];
-
-
-            const white =
-                piece[0] === "w";
-
-
-            let letter = type;
-
-
-            if (type === "N") {
-                letter = "N";
-            }
-
-
-            if (!white) {
-
-                letter =
-                    letter.toLowerCase();
-
-            }
-
-
-            fen += letter;
-
-        }
-
-
-        if (empty > 0) {
-
-            fen += empty;
-
-        }
-
-
-        if (row !== 7) {
-
-            fen += "/";
-
-        }
-
-    }
-
-
-    /*
-    IMPORTANT:
-
-    This basic version assumes
-    normal castling rights.
-
-    Later we will track them properly.
-    */
-
-    fen +=
-        " " +
-        turn +
-        " KQkq - 0 1";
-
-
-    return fen;
-
-}
-
-
-/* =========================
-   ASK STOCKFISH
-========================= */
+/*
+=================================
+ASK STOCKFISH FOR A MOVE
+=================================
+*/
 
 function askStockfish() {
 
-    if (!engineReady) {
+    if (
+        !stockfishReady
+    ) {
 
-        document.getElementById(
-            "engineStatus"
-        ).textContent =
-            "Stockfish still loading...";
+        document
+            .getElementById(
+                "thinking"
+            )
+            .textContent =
+            "Waiting for Stockfish...";
+
+        setTimeout(
+            askStockfish,
+            300
+        );
 
         return;
 
     }
 
 
+    if (
+        game.isGameOver()
+    ) {
+
+        updateStatus();
+
+        return;
+
+    }
+
+
+    stockfishThinking =
+        true;
+
+
+    document
+        .getElementById(
+            "thinking"
+        )
+        .textContent =
+        "Stockfish thinking...";
+
+
     const fen =
-        boardToFEN();
+        game.fen();
 
 
     console.log(
-        "FEN:",
+        "Sending FEN:",
         fen
     );
 
 
-    engine.postMessage(
-        "position fen " + fen
+    stockfish.postMessage(
+        "position fen " +
+        fen
     );
 
 
     /*
-    Thinking time.
-
-    1000 = 1 second
+    Give Stockfish
+    1 second to think.
     */
 
-    engine.postMessage(
+    stockfish.postMessage(
         "go movetime 1000"
     );
 
 }
 
 
-/* =========================
-   STOCKFISH MOVE
-========================= */
+/*
+=================================
+STOCKFISH MOVE
+=================================
+*/
 
-function stockfishMove(move) {
+function makeStockfishMove(
+    uciMove
+) {
 
     /*
-    UCI move example:
+    Example:
 
     e7e5
 
-    or
+    or promotion:
 
     e2e1q
     */
 
+
     const from =
-        move.substring(
+        uciMove.substring(
             0,
             2
         );
 
+
     const to =
-        move.substring(
+        uciMove.substring(
             2,
             4
         );
 
 
-    const fromCol =
-        from.charCodeAt(0) - 97;
-
-    const fromRow =
-        8 -
-        parseInt(
-            from[1]
-        );
+    let promotion =
+        "q";
 
 
-    const toCol =
-        to.charCodeAt(0) - 97;
+    if (
+        uciMove.length >=
+        5
+    ) {
 
-    const toRow =
-        8 -
-        parseInt(
-            to[1]
-        );
-
-
-    const piece =
-        board[fromRow][fromCol];
-
-
-    board[toRow][toCol] =
-        piece;
-
-    board[fromRow][fromCol] =
-        null;
-
-
-    /*
-    Promotion.
-    */
-
-    if (move.length === 5) {
-
-        const promotion =
-            move[4].toUpperCase();
-
-
-        board[toRow][toCol] =
-            "b" + promotion;
+        promotion =
+            uciMove[4];
 
     }
 
 
-    turn = "w";
+    const result =
+        game.move({
+
+            from:
+                from,
+
+            to:
+                to,
+
+            promotion:
+                promotion
+
+        });
 
 
-    document.getElementById(
-        "status"
-    ).textContent =
-        "White to move";
+    if (!result) {
+
+        console.error(
+            "Stockfish returned illegal move:",
+            uciMove
+        );
+
+
+        document
+            .getElementById(
+                "engineStatus"
+            )
+            .textContent =
+            "Engine move error";
+
+        return;
+
+    }
 
 
     drawBoard();
 
+    updateStatus();
+
 }
 
 
-/* =========================
-   NEW GAME
-========================= */
+/*
+=================================
+GAME STATUS
+=================================
+*/
+
+function updateStatus() {
+
+    const status =
+        document.getElementById(
+            "status"
+        );
+
+
+    if (
+        game.isCheckmate()
+    ) {
+
+        if (
+            game.turn() === "w"
+        ) {
+
+            status.textContent =
+                "Checkmate — Stockfish wins";
+
+        } else {
+
+            status.textContent =
+                "Checkmate — You win";
+
+        }
+
+
+        return;
+
+    }
+
+
+    if (
+        game.isStalemate()
+    ) {
+
+        status.textContent =
+            "Stalemate";
+
+        return;
+
+    }
+
+
+    if (
+        game.turn() === "w"
+    ) {
+
+        status.textContent =
+            "White to move";
+
+    } else {
+
+        status.textContent =
+            "Stockfish to move";
+
+    }
+
+
+    if (
+        game.isCheck()
+    ) {
+
+        status.textContent +=
+            " — CHECK";
+
+    }
+
+}
+
+
+/*
+=================================
+NEW GAME
+=================================
+*/
 
 function newGame() {
 
-    gameOver = false;
-
-    selected = null;
-
-    turn = "w";
-
-    resetBoard();
-
-    drawBoard();
+    game =
+        new Chess();
 
 
-    document.getElementById(
-        "status"
-    ).textContent =
-        "White to move";
+    selectedSquare =
+        null;
 
 
-    if (engine) {
+    selectedMoves =
+        [];
 
-        engine.postMessage(
+
+    stockfishThinking =
+        false;
+
+
+    document
+        .getElementById(
+            "thinking"
+        )
+        .textContent =
+        "";
+
+
+    if (stockfish) {
+
+        stockfish.postMessage(
+            "stop"
+        );
+
+        stockfish.postMessage(
             "ucinewgame"
+        );
+
+        stockfish.postMessage(
+            "isready"
         );
 
     }
 
+
+    drawBoard();
+
+    updateStatus();
+
 }
 
 
-/* =========================
-   START
-========================= */
+/*
+=================================
+BUTTON
+=================================
+*/
 
-resetBoard();
+document
+    .getElementById(
+        "newGameButton"
+    )
+    .addEventListener(
+        "click",
+        newGame
+    );
+
+
+/*
+=================================
+START EVERYTHING
+=================================
+*/
 
 drawBoard();
+
+updateStatus();
 
 startStockfish();
 
